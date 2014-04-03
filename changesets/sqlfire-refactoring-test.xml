@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+	<changeSet author="Jeffrey Williams" id="addColumn-test" runOnChange="false" failOnError="true">
+		<comment>Test we can add a column to table</comment>
+		<addColumn tableName="FlIGHTS">
+			<column name="cat" type="varchar(255)"/>
+		</addColumn>
+	</changeSet>
+
+	
+<!-- Rename column not supported by Database
+	<changeSet author="Jeffrey Williams" id="renameColumn-test" runOnChange="false" failOnError="true">
+		<renameColumn tableName="FLIGHTS" newColumnName="catrenamed" oldColumnName="cat" />
+	</changeSet>
+ -->
+
+	<changeSet author="Jeffrey Williams" id="dropColumn-test" runOnChange="false" failOnError="true">
+		<dropColumn tableName="FlIGHTS" columnName="cat"/>
+	</changeSet>
+	
+	
+	<changeSet author="Jeffrey Williams" id="createTable-test">
+		<createTable tableName="CAT" remarks="Added Test Table">
+			<column name="address" type="varchar(255)"/>
+		</createTable>
+	</changeSet>	
+
+
+<!-- No Supported By Liquibase Derby Support
+	<changeSet author="Jeffrey Williams" id="addAutoIncrement-test">
+		<addAutoIncrement tableName="person"
+				columnDataType="int"
+				columnName="id"
+				incrementBy="1"/>
+	</changeSet>	
+ -->
+ 
+<!-- SqlFire Not Supported Column modification not yet supported.
+
+	<changeSet author="Jeffrey Williams" id="addDefaultValue-test">
+		<addDefaultValue 
+				columnDataType="varchar"
+				columnName="address"
+				defaultValue="Something Else"
+				tableName="CAT"/>
+	</changeSet>
+	
+	<changeSet author="liquibase-docs" id="dropDefaultValue-example">
+		<dropDefaultValue 
+				columnDataType="varchar"
+				columnName="address"
+				tableName="CAT"/>
+	</changeSet>	
+	
+	<changeSet author="Jeffrey Williams" id="addNotNullConstraint-test">
+		<addNotNullConstraint 
+				columnDataType="varchar"
+				columnName="address"
+				defaultNullValue="Something Else"
+				tableName="CAT"/>
+	</changeSet>	
+
+	<changeSet author="liquibase-docs" id="dropNotNullConstraint-example">
+		<dropNotNullConstraint catalogName="cat"
+				columnDataType="int"
+				columnName="id"
+				schemaName="public"
+				tableName="person"/>
+	</changeSet>
+
+	<changeSet author="Jeffrey Williams" id="modifyDataType-test">
+		<modifyDataType 
+				columnName="address"
+				newDataType="varchar(500)"
+				tableName="CAT"/>
+	</changeSet>	
+ -->
+ 
+ 	<changeSet author="Jeffrey Williams" id="addColumn-id" runOnChange="false" failOnError="true">
+		<comment>Add a column to table</comment>
+		<addColumn tableName="CAT">
+			<column name="id" type="INT" defaultValueNumeric="100">
+				<constraints nullable="false"/>
+			</column>
+			<column name="DropColumn" type="INT" defaultValueNumeric="100">
+				<constraints nullable="false"/>
+			</column>
+		</addColumn>
+	</changeSet>
+	
+	<changeSet author="Jeffrey Williams" id="dropColumn2-test">
+		<dropColumn columnName="DropColumn"
+				tableName="CAT"/>
+	</changeSet>	
+	
+	<changeSet author="Jeffrey Williams" id="addPrimaryKey-test">
+		<addPrimaryKey 
+				columnNames="id"
+				constraintName="pk_cat"
+				tableName="CAT"/>
+	</changeSet>	
+
+	<changeSet author="Jeffrey Williams" id="dropPrimaryKey-test">
+		<dropPrimaryKey constraintName="pk_cat"
+				tableName="CAT"/>
+	</changeSet>
+	
+	<changeSet author="Jeffrey Williams" id="addUniqueConstraint-test">
+		<addUniqueConstraint 
+				columnNames="id, address"
+				constraintName="cat_unique_id"
+				tableName="CAT"/>
+	</changeSet>
+
+	<changeSet author="liquibase-docs" id="dropUniqueConstraint-test">
+		<dropUniqueConstraint constraintName="cat_unique_id"
+				tableName="CAT"
+				uniqueColumns="id, address"/>
+	</changeSet>
+	
+	<changeSet author="liquibase-docs" id="createIndex-example">
+		<createIndex indexName="idx_address"
+				tableName="CAT"
+				unique="true">
+			<column name="address" type="varchar(255)"/>
+		</createIndex>
+	</changeSet>	
+	
+	<changeSet author="Jeffrey Williams" id="dropIndex-test">
+		<dropIndex indexName="idx_address"
+				tableName="CAT"/>
+	</changeSet>	
+	
+<!-- Works
+	<changeSet author="liquibase-docs" id="createProcedure-example">
+		<createProcedure>
+			CREATE PROCEDURE DRS2(DP1 INTEGER, DP2 INTEGER)
+			PARAMETER STYLE JAVA
+			LANGUAGE JAVA
+			READS SQL DATA
+			DYNAMIC RESULT SETS 2
+			EXTERNAL NAME 'org.apache.derbyTesting.functionTests.util.ProcedureTest.selectRows'
+		</createProcedure>
+	</changeSet>
+ -->
+	
+<!-- Not Supported By Derby
+	<changeSet author="Jeffrey Williams" id="createSequence-test">
+		<createSequence
+				cycle="true"
+				incrementBy="2"
+				maxValue="1000"
+				minValue="10"
+				ordered="true"
+				sequenceName="cat_seq_id"
+				startValue="5"/>
+	</changeSet>
+	
+	<changeSet author="liquibase-docs" id="dropSequence-example">
+		<dropSequence catalogName="cat"
+				schemaName="public"
+				sequenceName="seq_id"/>
+	</changeSet>	
+ -->
+ 
+	<changeSet author="Jeffrey Williams" id="createView-test">
+		<createView 
+				viewName="cat_view">select id, address from cat where id > 10</createView>
+	</changeSet>
+
+<!-- Not Supported by Derby
+	<changeSet author="Jeffrey Williams" id="renameView-test">
+		<renameView newViewName="cat_view"
+				oldViewName="cat_view_renamed"/>
+	</changeSet>	
+ -->
+	
+	<changeSet author="Jeffrey Williams" id="dropView-test">
+		<dropView viewName="cat_view"/>
+	</changeSet>	
+	
+	<changeSet author="Jeffrey Williams" id="insert-test">
+		<insert tableName="CAT">
+			<column name="id" valueNumeric="1"/>
+			<column name="address" type="varchar(255)" value="Hoffman Estates"/>
+		</insert>
+		<insert tableName="CAT">
+			<column name="id" valueNumeric="2"/>
+			<column name="address" type="varchar(255)" value="Arlington Heights"/>
+		</insert>
+	</changeSet>
+	
+	<changeSet author="Jeffrey Williams" id="delete-test">
+		<delete tableName="CAT">
+			<where>id = 1</where>
+		</delete>
+	</changeSet>
+	
+	<changeSet author="Jeffrey Williams" id="update-test">
+		<update tableName="CAT">
+			<column name="address" type="varchar(255)" value="Palentine"/>
+			<where>id = 2</where>
+		</update>
+	</changeSet>
+
+
+	
+<!-- SQLFIRE RENAME statement not yet implemented.
+	<changeSet author="Jeffrey Williams" id="renameTable-test">
+		<renameTable newTableName="CATRenamed"
+				oldTableName="CAT"/>
+	</changeSet>	
+ -->
+		
+	<changeSet author="Jeffrey Williams" id="tagDatabase-example">
+		<tagDatabase tag="version_1.3"/>
+	</changeSet>			
+			
+</databaseChangeLog>
