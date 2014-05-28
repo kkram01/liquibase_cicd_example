@@ -7,19 +7,19 @@
         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 	
 <!-- Load Example Schema Provided By SqlFire  -->
-	<include file="changesets/initial-schema-sqlfire.sql"/> 
+	<include file="changesets/sqlfire/initial-schema-sqlfire.sql"/> 
 <!-- Can Mix and Match changeset formats -->
 <!-- <include file="changesets/initial-schema.xml"/>  -->
  
 <!-- Load Example Data Provided By SqlFire  -->
-	<include file="changesets/data/loadCOUNTRIES.sql"/> 
-	<include file="changesets/data/loadCITIES.sql"/> 
-	<include file="changesets/data/loadAIRLINES.sql"/>  
-	<include file="changesets/data/loadFLIGHTS1.sql"/>  
-	<include file="changesets/data/loadFLIGHTS2.sql"/>  
-	<include file="changesets/data/loadFLIGHTAVAILABILITY1.sql"/>  
-	<include file="changesets/data/loadFLIGHTAVAILABILITY2.sql"/>  
+	<include file="changesets/sqlfire/data/loadCOUNTRIES.sql"/> 
+	<include file="changesets/sqlfire/data/loadCITIES.sql"/> 
+	<include file="changesets/sqlfire/data/loadAIRLINES.sql"/>  
+	<include file="changesets/sqlfire/data/loadFLIGHTS1.sql"/>  
+	<include file="changesets/sqlfire/data/loadFLIGHTS2.sql"/>  
+	<include file="changesets/sqlfire/data/loadFLIGHTAVAILABILITY1.sql"/>  
+	<include file="changesets/sqlfire/data/loadFLIGHTAVAILABILITY2.sql"/>  
 
-	<include file="changesets/sqlfire-refactoring-test.xml"/>
+	<!-- <include file="changesets/sqlfire/sqlfire-refactoring-test.xml"/> -->
 
 </databaseChangeLog>
