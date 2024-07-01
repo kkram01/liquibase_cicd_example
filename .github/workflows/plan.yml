@@ -1,0 +1,62 @@
+on:
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  plan-liquibase-action:
+    runs-on: ubuntu-latest
+    name: Plan Liquibase Action
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      pull-requests: write
+    steps:
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.SERVICE_ACCOUNT }}
+
+      - id: 'secrets'
+        uses: 'google-github-actions/get-secretmanager-secrets@v2'
+        with:
+            secrets: |-
+              EF_DB_CONNECTION_STRING:${{ vars.GOOGLE_CLOUD_PROJECT }}/EF_DB_CONNECTION 
+              SQL_CONNECTION:${{vars.GOOGLE_CLOUD_PROJECT}}/SQL_INSTANCE_CONNECTION_NAME
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+            version: '>= 363.0.0'
+
+      - name: Enable cloud SQL proxy to temp instance
+        run: |
+            curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.0/cloud-sql-proxy.linux.amd64
+            chmod +x cloud-sql-proxy
+            nohup ./cloud-sql-proxy --auto-iam-authn ${{ steps.secrets.outputs.SQL_CONNECTION }} > cloud-sql-proxy.out 2> cloud-sql-proxy.err < /dev/null &
+            echo $!
+            echo CLOUD_SQL_PROXY_PID=$(echo $!) >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download and Install liquibase
+        run: |
+          curl -L https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip --output liquibase-4.28.0.zip
+          unzip -o -d liquibase liquibase-4.28.0.zip
+
+      - name: Liquibase Status
+        run: |
+          ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} status --verbose
+
+      - name: Liquibase Print SQL
+        run: |
+          ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/updatesql.sql update-sql
+
+      - name: Upload SQL statements
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./artifacts/updatesql.sql
