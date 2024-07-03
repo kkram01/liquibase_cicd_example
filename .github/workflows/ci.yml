@@ -1,0 +1,23 @@
+name: Continuous Integration (CI) Build
+
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+jobs:
+  continuous-integration:
+    name: Liquibase plan and Update
+    uses: ./.github/workflows/liquibase-ci.yml
+    secrets:
+      URL: ${{ secrets.URL }}
+      USERNAME: ${{ secrets.USERNAME }}
+    with:
+      WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+      SERVICE_ACCOUNT: ${{ vars.SERVICE_ACCOUNT }}
+      GOOGLE_CLOUD_PROJECT : ${{ vars.GOOGLE_CLOUD_PROJECT }}
+      SQL_LOG_LEVEL: ${{ vars.SQL_LOG_LEVEL }}
+      LOG_LEVEL: ${{ vars.LOG_LEVEL }}
