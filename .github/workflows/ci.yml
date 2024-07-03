@@ -1,0 +1,17 @@
+name: Continuous Integration (CI) Build
+
+on:
+  pull_request:
+    branches: [develop, master]
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [develop, master]
+  workflow_dispatch:
+
+jobs:
+  continuous-integration:
+    name: Liquibase plan and Update
+    uses: ./.github/workflows/liquibase-ci.yml
+    secrets:
+      URL: ${{ secrets.URL }}
+      USERNAME: ${{ secrets.USERNAME }}
