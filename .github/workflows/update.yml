@@ -6,6 +6,7 @@ on:
 jobs:
   update-liquibase-action:
     runs-on: ubuntu-latest
+    environment: dev
     name: Update Liquibase Action
     permissions:
       contents: 'read'
