@@ -1,0 +1,115 @@
+name: Reusable Liquibase Publishing Workflow
+
+on:
+  workflow_call:
+    inputs:
+      GOOGLE_CLOUD_PROJECT:
+        description: "Name of the GCP Project"
+        type: string
+        required: true
+      WORKLOAD_IDENTITY_PROVIDER:
+        description: "Workload Identity Provider Pool"
+        type: string
+        required: true
+      SERVICE_ACCOUNT:
+        description: "The Service Account which is workload identity federated"
+        type: string
+        required: true
+      SQL_LOG_LEVEL:
+        description: "The SQL Log Level setting for Liquibase"
+        type: string
+        required: true
+      LOG_LEVEL:
+        description: "Log Level setting for Liquibase"
+        type: string
+        required: true
+    secrets:
+      URL:
+        required: true
+      USERNAME:
+        required: true
+
+jobs:
+  ci-local-vars:
+    runs-on: ubuntu-latest
+    outputs:
+      component-path: ${{ steps.local-vars.outputs.component-path }}
+      environment: ${{ steps.local-vars.outputs.environment }}
+    steps:
+    - name: set local variables
+      id: local-vars
+      run: |
+        if [[ ${{ github.event_name }} == release && ${{ github.event.action}} == published ]]; then
+          echo "environment=prod" >>$GITHUB_OUTPUT
+        else
+          exit 1
+        fi
+        echo
+        cat $GITHUB_OUTPUT
+
+  liquibase:
+    needs: [ci-local-vars]
+    environment:
+      name: ${{ needs.ci-local-vars.outputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      pull-requests: write
+      actions: read
+      security-events: write
+
+    steps:
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ vars.SERVICE_ACCOUNT }}
+
+    - id: 'secrets'
+      uses: 'google-github-actions/get-secretmanager-secrets@v2'
+      with:
+        secrets: |-
+          EF_DB_CONNECTION_STRING:${{ vars.GOOGLE_CLOUD_PROJECT }}/EF_DB_CONNECTION 
+          SQL_CONNECTION:${{vars.GOOGLE_CLOUD_PROJECT}}/SQL_INSTANCE_CONNECTION_NAME
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        version: '>= 363.0.0'
+
+    - name: Enable cloud SQL proxy to temp instance
+      run: |
+        curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.0/cloud-sql-proxy.linux.amd64
+        chmod +x cloud-sql-proxy
+        nohup ./cloud-sql-proxy --auto-iam-authn ${{ steps.secrets.outputs.SQL_CONNECTION }} > cloud-sql-proxy.out 2> cloud-sql-proxy.err < /dev/null &
+        echo $!
+        echo CLOUD_SQL_PROXY_PID=$(echo $!) >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Download and Install liquibase
+      run: |
+        curl -L https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip --output liquibase-4.28.0.zip
+        unzip -o -d liquibase liquibase-4.28.0.zip
+
+    - name: Liquibase Status
+      run: |
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} status --verbose
+
+    - name: Liquibase Print SQL
+      run: |
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
+
+    - name: Upload SQL statements
+      uses: actions/upload-artifact@v4
+      with:
+        path: ./artifacts/update-sql.sql
+
+    - name: Liquibase Update
+      run: |
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} update
