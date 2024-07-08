@@ -1,4 +1,4 @@
-name: Reusable Continuous Integration (CI) Build Workflow
+name: Reusable Liquibase Publishing Workflow
 
 on:
   workflow_call:
@@ -35,8 +35,8 @@ on:
 
 jobs:
   liquibase:
-    environment:
-      name: ${{ inputs.environment }}
+    needs: [ci-local-vars]
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
@@ -56,7 +56,7 @@ jobs:
     - id: 'secrets'
       uses: 'google-github-actions/get-secretmanager-secrets@v2'
       with:
-        secrets: |-
+        secrets: |- 
           SQL_CONNECTION:${{vars.GOOGLE_CLOUD_PROJECT}}/SQL_INSTANCE_CONNECTION_NAME
 
     - name: 'Set up Cloud SDK'
@@ -86,10 +86,6 @@ jobs:
       run: |
         ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} status --verbose
 
-    - name: Liquibase Validate
-      run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} validate   
-
     - name: Liquibase Print SQL
       run: |
         ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
@@ -100,6 +96,5 @@ jobs:
         path: ./artifacts/update-sql.sql
 
     - name: Liquibase Update
-      if: github.event_name == 'push'
       run: |
         ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ secrets.URL }} --username ${{ secrets.USERNAME }} update
