@@ -9,32 +9,34 @@ on:
   workflow_dispatch:
 
 jobs:
-  ci-local-vars:
-    runs-on: ubuntu-latest
-    outputs:
-      environment: ${{ steps.local-vars.outputs.environment }}
-    steps:
-    - name: set local variables
-      id: local-vars
-      run: |
-        if [[ ${{ github.ref_name }} == main ]]; then
-          echo "environment=qa" >>$GITHUB_OUTPUT
-        else
-          echo "environment=dev" >>$GITHUB_OUTPUT
-        fi
-        echo
-        cat $GITHUB_OUTPUT
-  continuous-integration:
+  qa:
     name: Liquibase plan and Update
-    needs: [ci-local-vars]
+    if: github.ref_name == 'main'
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
-      URL: ${{ secrets.URL }}
+      SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       USERNAME: ${{ secrets.USERNAME }}
     with:
-      environment: ${{ needs.ci-local-vars.outputs.environment }}
-      WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
-      SERVICE_ACCOUNT: ${{ vars.SERVICE_ACCOUNT }}
+      environment: 'qa'
+      URL: ${{ vars.URL }}
       GOOGLE_CLOUD_PROJECT : ${{ vars.GOOGLE_CLOUD_PROJECT }}
       SQL_LOG_LEVEL: ${{ vars.SQL_LOG_LEVEL }}
       LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+      RUNNER: "ubuntu-latest"
+
+  dev:
+    name: Liquibase plan and Update
+    if: github.ref_name  == 'develop'
+    uses: ./.github/workflows/liquibase-ci.yml
+    secrets:
+      SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      USERNAME: ${{ secrets.USERNAME }}
+    with:
+      environment: 'dev'
+      URL: ${{ vars.URL }}
+      GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
+      SQL_LOG_LEVEL: ${{ vars.SQL_LOG_LEVEL }}
+      LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+      RUNNER: "ubuntu-latest"
