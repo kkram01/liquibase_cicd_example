@@ -1,0 +1,60 @@
+name: Production Release to Cloud Run
+on:
+  release:
+    types: [published]
+jobs:
+  image-tag: 
+    name: "Image tag to latest"
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Google Authentication
+        id: auth
+        uses: 'google-github-actions/auth@v0'
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}' # e.g. - projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'     # e.g. - my-service-account@my-project.iam.gserviceaccount.com
+      
+      #TODO: ONLY tag, don't build 
+      - name: tag
+        shell: bash
+        run: |-
+          gcloud artifacts docker tags add \
+          "${{ vars.region }}-docker.pkg.dev/${{ vars.artifact_registry_project }}/${{ vars.artifact_registry_repo }}/${{ vars.service_name }}:latest" \
+          "${{ vars.region }}-docker.pkg.dev/${{ vars.artifact_registry_project }}/${{ vars.artifact_registry_repo }}/${{ vars.service_name }}:${{ github.event.release.tag_name }}"
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create prod Service Declaration   
+        run: |-
+          export CONTAINER_IMAGE="${{ vars.region }}-docker.pkg.dev/${{ vars.artifact_registry_project }}/${{ vars.artifact_registry_repo }}/${{ vars.service_name }}:${{ github.event.release.tag_name }}"
+          export SERVICE_NAME="${{ vars.service_name }}"
+          export PROJECT_ID="${{ vars.gcp_project_id }}"
+          export REVISION_TAG="${{ github.sha }}"
+          export CLOUD_RUN_SA="${{ vars.cloud_run_sa }}"
+          export REGION="${{ vars.region }}"
+          export APP_CODE="${{ vars.app_code }}"
+          export CLASSIFICATION="${{ vars.classification }}"
+          export COST_ID="${{ vars.cost_id }}"
+          export DEPARTMENT_ID="${{ vars.department_id }}"
+          export HCA_PROJECT_ID="${{ vars.hca_project_id }}"
+          export TCO_ID="${{ vars.tco_id }}"
+          export ENVIRONMENT="prod"
+          envsubst < ./service-yaml/container-prod.yaml > container-prod.yaml
+        
+      - name: Deploy to prod Cloud Run
+        id: deploy-prod
+        uses: google-github-actions/deploy-cloudrun@v0
+        with:
+          project_id: ${{ vars.gcp_project_id }}
+          service: ${{ vars.service_name }}
+          region: ${{ vars.region }}
+          metadata: container-prod.yaml 

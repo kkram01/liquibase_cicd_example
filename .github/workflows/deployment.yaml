@@ -1,0 +1,33 @@
+name: Build and Deploy to Cloud Run
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [develop, main]
+
+jobs: 
+  #DEV
+  dev:
+    if: github.ref_name != 'main'
+    uses: ./.github/workflows/_deployment.yaml
+    permissions: 
+      id-token: write
+      contents: read
+      actions: read
+      security-events: write
+    with: 
+      environment: dev
+    secrets: inherit
+  
+  #QA
+  qa: 
+    if: github.ref_name == 'main'
+    uses: ./.github/workflows/_deployment.yaml
+    permissions: 
+      id-token: write
+      contents: read
+      actions: read
+      security-events: write
+    with: 
+      environment: qa
+    secrets: inherit

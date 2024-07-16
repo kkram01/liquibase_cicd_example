@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  qa:
+  qa-liquibase-update:
     name: QA Liquibase plan and Update
     if: github.ref_name == 'main'
     uses: ./.github/workflows/liquibase-ci.yml
@@ -20,8 +20,21 @@ jobs:
     with:
       environment: 'qa'
       runner: 'ubuntu-latest'
+  qa-docker:
+    name: QA docker deploy
+    needs: qa-liquibase-update
+    if: github.ref_name == 'main'
+    uses: ./github/workflows/_deployment.yaml
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+      security-events: write
+    with:
+      environment: 'qa'
+    secrets: inherit
 
-  dev:
+  dev-liquibase-update:
     name: DEV Liquibase plan and Update
     if: github.ref_name  == 'develop'
     uses: ./.github/workflows/liquibase-ci.yml
@@ -32,3 +45,16 @@ jobs:
     with:
       environment: 'dev'
       runner: 'ubuntu-latest'
+  dev-docker:
+    name: DEV docker deploy
+    needs: dev-liquibase-update
+    if: github.ref_name == 'develop'
+    uses: ./github/workflows/_deployment.yaml
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+      security-events: write
+    with:
+      environment: 'dev'
+    secrets: inherit

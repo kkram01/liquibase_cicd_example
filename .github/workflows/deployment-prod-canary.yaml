@@ -1,0 +1,90 @@
+name: Canary Deployment to Cloud Run
+on: 
+  workflow_dispatch: 
+    inputs: 
+      environment: 
+        type: choice
+        required: true
+        default: "prod"
+        description: GitHub Environment
+        options: 
+          - prod
+      new_revision_percentage: 
+        type: choice
+        required: true
+        default: '10'
+        description: New Cloud Run revision traffic percentage
+        options:
+          - 0 
+          - 10
+          - 25
+          - 50
+          - 75
+          - 90
+          - 100
+      existing_revision_percentage: 
+        type: choice
+        required: true
+        default: '90'
+        description: Old Cloud Run revision traffic percentage
+        options: 
+          - 10
+          - 25
+          - 50
+          - 75
+          - 90
+          - 100
+      existing_revision_name:
+        type: string
+        required: true
+        description: Old Cloud Run revision name. 
+jobs:
+  deploy: 
+    if: contains(fromJSON('["main"]'), github.ref_name)
+    name: "Cloud Run Deployment"
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Google Authentication
+        id: auth
+        uses: 'google-github-actions/auth@v0'
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}' # e.g. - projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'     # e.g. - my-service-account@my-project.iam.gserviceaccount.com
+
+      - name: Create Service prod Declaration   
+        run: |-
+          export CONTAINER_IMAGE="${{ vars.region }}-docker.pkg.dev/${{ vars.artifact_registry_project }}/${{ vars.artifact_registry_repo }}/${{ vars.service_name }}:${{ github.sha }}"
+          export SERVICE_NAME="${{ vars.service_name }}"
+          export PROJECT_ID="${{ vars.gcp_project_id }}"
+          export REVISION_TAG="${{ github.sha }}"
+          export CLOUD_RUN_SA="${{ vars.cloud_run_sa }}"
+          export REGION="${{ vars.region }}"
+          export APP_CODE="${{ vars.app_code }}"
+          export CLASSIFICATION="${{ vars.classification }}"
+          export COST_ID="${{ vars.cost_id }}"
+          export DEPARTMENT_ID="${{ vars.department_id }}"
+          export HCA_PROJECT_ID="${{ vars.hca_project_id }}"
+          export TCO_ID="${{ vars.tco_id }}"
+          export ENVIRONMENT="${{ inputs.environment }}"
+          export NEW_REVISION_PERCENTAGE=${{ inputs.new_revision_percentage }}
+          export EXISTING_REVISION=${{ inputs.existing_revision_name }}
+          export EXISTING_REVISION_PERCENTAGE=${{ inputs.existing_revision_percentage }}
+          envsubst < ./service-yaml/container-canary.yaml > container-canary.yaml
+
+      - name: Prod canary deployment to Cloud Run
+        id: deploy-canary
+        uses: google-github-actions/deploy-cloudrun@v0
+        with:
+          project_id: ${{ vars.gcp_project_id }}
+          service: ${{ vars.service_name }}
+          region: ${{ vars.region }}
+          metadata: container-canary.yaml
+        #TODO: add revision tag url, do same thing on data tier (blue-green), test in parallel 
