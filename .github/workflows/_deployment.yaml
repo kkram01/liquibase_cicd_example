@@ -90,6 +90,10 @@ jobs:
           username: 'oauth2accesstoken'
           password: '${{ steps.auth.outputs.access_token }}'
           registry: '${{ vars.region }}-docker.pkg.dev'
+      - name: Test Debug
+        id: debug
+        run: |-
+          ls -al
 
       - name: Build and Tag
         id: build-image
@@ -122,11 +126,11 @@ jobs:
 
       - name: Google Authentication
         id: auth
-        uses: 'google-github-actions/auth@v0'
+        uses: 'google-github-actions/auth@v2'
         with:
           token_format: 'access_token'
-          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}' # e.g. - projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
-          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'     # e.g. - my-service-account@my-project.iam.gserviceaccount.com
+          workload_identity_provider: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}' # e.g. - projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
+          service_account: '${{ secrets.SERVICE_ACCOUNT }}'     # e.g. - my-service-account@my-project.iam.gserviceaccount.com
 
       - name: Create Service ${{ inputs.environment }} Declaration   
         run: |-
@@ -143,11 +147,11 @@ jobs:
           export HCA_PROJECT_ID="${{ vars.hca_project_id }}"
           export TCO_ID="${{ vars.tco_id }}"
           export ENVIRONMENT="${{ inputs.environment }}"
-          envsubst < ./service-yaml/container-${{ inputs.environment }}.yaml > container-${{ inputs.environment }}.yaml
+          envsubst < ./sample-deploy-code/service-yaml/container-${{ inputs.environment }}.yaml > container-${{ inputs.environment }}.yaml
 
       - name: Deploy to ${{ inputs.environment }} Cloud Run
         id: deploy-dev-qa
-        uses: google-github-actions/deploy-cloudrun@v0
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
           project_id: ${{ vars.gcp_project_id }}
           service: ${{ vars.service_name }}
