@@ -23,7 +23,7 @@ jobs:
   qa-docker:
     name: QA docker deploy
     needs: qa-liquibase-update
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' && needs.qa-liquibase-update.result == 'success'
     uses: ./.github/workflows/_deployment.yaml
     permissions:
       id-token: write
@@ -33,6 +33,15 @@ jobs:
     with:
       environment: 'qa'
     secrets: inherit
+  qa-liquibase-rollback:
+    name: QA liquibase rollback
+    runs-on: ubuntu-latest
+    if: failure() || cancelled()
+    needs: [qa-liquibase-update, qa-docker]
+    steps:
+    - name: test rollback
+      run: |-
+       echo "runs rollback just fine!"
 
   dev-liquibase-update:
     name: DEV Liquibase plan and Update
