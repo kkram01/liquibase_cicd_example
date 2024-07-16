@@ -6,31 +6,23 @@ on:
 
 jobs:
   plan-production:
-    name: Liquibase plan and Update
+    name: Prod Plan - Liquibase plan and Update
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
       SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
       WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       USERNAME: ${{ secrets.USERNAME }}
     with:
-      environment: "prod-plan"
-      URL: ${{ vars.URL }}
-      GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
-      SQL_LOG_LEVEL: ${{ vars.SQL_LOG_LEVEL }}
-      LOG_LEVEL: ${{ vars.LOG_LEVEL }}
-      RUNNER: "ubuntu-latest"
+      environment: 'prod-plan'
+      runner: 'ubuntu-latest'
 
   deploy-production:
-    name: Liquibase plan and Update on production
+    name: Prod Deploy - Liquibase plan and Update on production
     uses: ./.github/workflows/liquibase-release.yml
     secrets:
       SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
       WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       USERNAME: ${{ secrets.USERNAME }}
     with:
-      environment: "prod"
-      URL: ${{ vars.URL }}
-      GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
-      SQL_LOG_LEVEL: ${{ vars.SQL_LOG_LEVEL }}
-      LOG_LEVEL: ${{ vars.LOG_LEVEL }}
-      RUNNER: ${{ vars.RUNNER }}
+      environment: 'prod'
+      runner: 'ubuntu-latest'
