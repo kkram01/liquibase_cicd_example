@@ -3,28 +3,12 @@ name: Reusable Continuous Integration (CI) Build Workflow
 on:
   workflow_call:
     inputs:
-      RUNNER:
-        description: "The Github runner platform (runs-on) value for the jobs"
-        type: string
-        required: true
       environment:
         description: "The Github environment to run the workflow with"
         type: string
         required: true
-      URL:
-        description: "The Jdbc url for liquibase to establish connection with"
-        type: string
-        required: true
-      GOOGLE_CLOUD_PROJECT:
-        description: "Name of the GCP Project"
-        type: string
-        required: true
-      SQL_LOG_LEVEL:
-        description: "The SQL Log Level setting for Liquibase"
-        type: string
-        required: true
-      LOG_LEVEL:
-        description: "Log Level setting for Liquibase"
+      runner:
+        description: "The Github runner to use for the workflow jobs"
         type: string
         required: true
     secrets:
@@ -39,7 +23,7 @@ jobs:
   liquibase:
     environment:
       name: ${{ inputs.environment }}
-    runs-on: ${{ inputs.RUNNER }}
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 360
     permissions:
       contents: 'read'
@@ -59,7 +43,7 @@ jobs:
       uses: 'google-github-actions/get-secretmanager-secrets@v2'
       with:
         secrets: |-
-          SQL_CONNECTION:${{ inputs.GOOGLE_CLOUD_PROJECT }}/SQL_INSTANCE_CONNECTION_NAME
+          SQL_CONNECTION:${{ vars.GOOGLE_CLOUD_PROJECT }}/SQL_INSTANCE_CONNECTION_NAME
 
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v2'
@@ -86,15 +70,15 @@ jobs:
 
     - name: Liquibase Status
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ inputs.LOG_LEVEL }} --sql-log-level ${{ inputs.SQL_LOG_LEVEL }} --url ${{ inputs.URL }} --username ${{ secrets.USERNAME }} status --verbose
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} status --verbose
 
     - name: Liquibase Validate
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ inputs.LOG_LEVEL }} --sql-log-level ${{inputs.SQL_LOG_LEVEL}} --url ${{ inputs.URL }} --username ${{ secrets.USERNAME }} validate   
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} validate   
 
     - name: Liquibase Print SQL
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ inputs.LOG_LEVEL }} --sql-log-level ${{ inputs.SQL_LOG_LEVEL }} --url ${{ inputs.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
 
     - name: Set Timestamp
       run: echo "TIMESTAMP=$(date +"%Y%m%d%H%M%S")" >> $GITHUB_ENV
@@ -102,10 +86,10 @@ jobs:
     - name: Upload SQL statements
       uses: actions/upload-artifact@v4
       with:
-        name: artifact-${{ inputs.environment }}-${{ env.TIMESTAMP }}
+        name: artifact-${{ vars.environment }}-${{ env.TIMESTAMP }}
         path: ./artifacts/update-sql.sql
 
     - name: Liquibase Update
       if: github.event_name == 'push'
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{inputs.LOG_LEVEL}} --sql-log-level ${{inputs.SQL_LOG_LEVEL}} --url ${{ inputs.URL }} --username ${{ secrets.USERNAME }} update
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} update

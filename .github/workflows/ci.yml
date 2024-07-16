@@ -10,7 +10,7 @@ on:
 
 jobs:
   qa:
-    name: Liquibase plan and Update
+    name: QA Liquibase plan and Update
     if: github.ref_name == 'main'
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
@@ -19,14 +19,10 @@ jobs:
       USERNAME: ${{ secrets.USERNAME }}
     with:
       environment: 'qa'
-      URL: ${{ vars.URL }}
-      GOOGLE_CLOUD_PROJECT : ${{ vars.GOOGLE_CLOUD_PROJECT }}
-      SQL_LOG_LEVEL: ${{ vars.SQL_LOG_LEVEL }}
-      LOG_LEVEL: ${{ vars.LOG_LEVEL }}
-      RUNNER: "ubuntu-latest"
+      runner: 'ubuntu-latest'
 
   dev:
-    name: Liquibase plan and Update
+    name: DEV Liquibase plan and Update
     if: github.ref_name  == 'develop'
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
@@ -35,8 +31,4 @@ jobs:
       USERNAME: ${{ secrets.USERNAME }}
     with:
       environment: 'dev'
-      URL: ${{ vars.URL }}
-      GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
-      SQL_LOG_LEVEL: ${{ vars.SQL_LOG_LEVEL }}
-      LOG_LEVEL: ${{ vars.LOG_LEVEL }}
-      RUNNER: "ubuntu-latest"
+      runner: 'ubuntu-latest'
