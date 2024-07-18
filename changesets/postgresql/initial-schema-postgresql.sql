@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset Jeffrey Williams:InitialSchemaCreation runOnChange:false splitStatements:true Comment:Adding Initial Schema Description:A Description
+--changeset airlines:InitialSchemaCreation runOnChange:false splitStatements:true Comment:Adding Initial Schema Description:A Description
 CREATE TABLE AIRLINES
    (
 		AIRLINE CHAR(2) NOT NULL CONSTRAINT AIRLINES_PK PRIMARY KEY,
@@ -100,3 +100,4 @@ CREATE TABLE FLIGHTS_HISTORY
 		AIRCRAFT VARCHAR(6), 
 		STATUS VARCHAR (20)
    );
+--rollback DROP TABLE AIRLINES, COUNTRIES, CITIES, MAPS, FLIGHTS, FLIGHTAVAILABILITY, FLIGHTS_HISTORY;

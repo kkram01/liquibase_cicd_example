@@ -1,0 +1,77 @@
+name: Reusable Continuous Integration (CI) Build Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "The Github environment to run the workflow with"
+        type: string
+        required: true
+      runner:
+        description: "The Github runner to use for the workflow jobs"
+        type: string
+        required: true
+      liquibase-tag:
+        description: "Tag the state of liquibase DB"
+        type: string
+        required: true
+    secrets:
+      WORKLOAD_IDENTITY_PROVIDER:
+        required: true
+      SERVICE_ACCOUNT:
+        required: true
+      USERNAME:
+        required: true
+
+jobs:
+  liquibase:
+    environment:
+      name: ${{ inputs.environment }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 360
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      pull-requests: write
+      actions: read
+      security-events: write
+
+    steps:
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ secrets.SERVICE_ACCOUNT }}
+
+    - id: 'secrets'
+      uses: 'google-github-actions/get-secretmanager-secrets@v2'
+      with:
+        secrets: |-
+          SQL_CONNECTION:${{ vars.GOOGLE_CLOUD_PROJECT }}/SQL_INSTANCE_CONNECTION_NAME
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        version: '>= 363.0.0'
+
+    - name: Enable cloud SQL proxy to temp instance
+      run: |
+        curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.0/cloud-sql-proxy.linux.amd64
+        chmod +x cloud-sql-proxy
+        nohup ./cloud-sql-proxy --auto-iam-authn ${{ steps.secrets.outputs.SQL_CONNECTION }} > cloud-sql-proxy.out 2> cloud-sql-proxy.err < /dev/null &
+        echo $!
+        echo CLOUD_SQL_PROXY_PID=$(echo $!) >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Download and Install liquibase
+      run: |
+        curl -L https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip --output liquibase-4.28.0.zip
+        unzip -o -d liquibase liquibase-4.28.0.zip
+
+    - name: Liquibase Tag
+      run: |
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} tag --tag=${{ inputs.liquibase-tag }}

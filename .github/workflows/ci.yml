@@ -9,8 +9,22 @@ on:
   workflow_dispatch:
 
 jobs:
+  qa-liquibase-tag-current-state:
+    name: QA Liquibase Tag State before update
+    if: github.ref_name == 'main' && github.event_name == 'push'
+    uses: ./.github/workflows/liquibase-tag.yml
+    secrets:
+      SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      USERNAME: ${{ secrets.USERNAME }}
+    with:
+      environment: 'qa'
+      runner: 'ubuntu-latest'
+      liquibase-tag: 'before-${{ github.sha }}'
+
   qa-liquibase-update:
     name: QA Liquibase plan and Update
+    needs: qa-liquibase-tag-current-state
     if: github.ref_name == 'main'
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
@@ -42,6 +56,35 @@ jobs:
     - name: test rollback
       run: |-
        echo "runs rollback just fine!"
+
+  qa-liquibase-rollback1:
+    name: QA liquibase rollback1
+    uses: ./.github/workflows/liquibase-rollback.yml
+    if: failure() || cancelled()
+    needs: [qa-liquibase-update, qa-docker]
+    secrets:
+      SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      USERNAME: ${{ secrets.USERNAME }}
+    with:
+      environment: 'qa'
+      runner: 'ubuntu-latest'
+      rollback-tag: 'before-${{ github.sha }}'
+
+  qa-liquibase-update-tag:
+      name: QA Liquibase Update tag after successful deployment
+      needs: [qa-liquibase-update, qa-docker]
+      if: github.ref_name == 'main' && github.event_name == 'push'
+      uses: ./.github/workflows/liquibase-tag.yml
+      secrets:
+        SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+        WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+        USERNAME: ${{ secrets.USERNAME }}
+      with:
+        environment: 'qa'
+        runner: 'ubuntu-latest'
+        liquibase-tag: '${{ github.sha }}'
+
 
   dev-liquibase-update:
     name: DEV Liquibase plan and Update
