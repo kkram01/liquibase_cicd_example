@@ -22,6 +22,8 @@ on:
         required: true
       USERNAME:
         required: true
+      ACCESS_TOKEN:
+        required: true
 
 jobs:
   liquibase:
@@ -75,3 +77,11 @@ jobs:
     - name: Liquibase Tag
       run: |
         ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} tag --tag=${{ inputs.liquibase-tag }}
+
+    - name: Update Repository Env Variable
+      run: |
+        gh variable list --env ${{ inputs.environment }}
+        gh variable set LAST_STABLE_VERSION_TAG --env ${{ inputs.environment }} --body ${{ inputs.liquibase-tag }}
+        gh variable list --env ${{ inputs.environment }}
+      env:
+        GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}

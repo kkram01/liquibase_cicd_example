@@ -86,7 +86,7 @@ jobs:
     - name: Upload SQL statements
       uses: actions/upload-artifact@v4
       with:
-        name: artifact-${{ inputs.environment }}-${{ env.TIMESTAMP }}
+        name: update-sql-${{ inputs.environment }}-${{ env.TIMESTAMP }}
         path: ./artifacts/update-sql.sql
 
     - name: Liquibase Update

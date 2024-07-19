@@ -11,10 +11,6 @@ on:
         description: "The Github runner to use for the workflow jobs"
         type: string
         required: true
-      rollback-tag:
-        description: "The Liquibase tag of the DB to rollback to"
-        type: string
-        required: true
     secrets:
       WORKLOAD_IDENTITY_PROVIDER:
         required: true
@@ -74,7 +70,7 @@ jobs:
 
     - name: Liquibase Print Rollback SQL
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/rollback-sql.sql rollback-sql ${{ inputs.rollback-tag }}
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/rollback-sql.sql rollback-sql ${{ vars.LAST_STABLE_VERSION_TAG }}
 
     - name: Set Timestamp
       run: echo "TIMESTAMP=$(date +"%Y%m%d%H%M%S")" >> $GITHUB_ENV
@@ -82,9 +78,9 @@ jobs:
     - name: Upload SQL statements
       uses: actions/upload-artifact@v4
       with:
-        name: artifact-${{ inputs.environment }}-${{ env.TIMESTAMP }}
+        name: rollback-sql-${{ inputs.environment }}-${{ env.TIMESTAMP }}
         path: ./artifacts/rollback-sql.sql
 
     - name: Liquibase Rollback
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} rollback ${{ inputs.rollback-tag }}
+        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} rollback ${{ vars.LAST_STABLE_VERSION_TAG }}

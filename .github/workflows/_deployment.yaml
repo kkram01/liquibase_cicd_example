@@ -152,8 +152,11 @@ jobs:
       - name: Deploy to ${{ inputs.environment }} Cloud Run
         id: deploy-dev-qa
         uses: google-github-actions/deploy-cloudrun@v2
+        continue-on-error: true
         with:
           project_id: ${{ vars.gcp_project_id }}
           service: ${{ vars.service_name }}
           region: ${{ vars.region }}
-          metadata: container-${{ inputs.environment }}.yaml 
+          metadata: container-${{ inputs.environment }}.yaml
+      - run: echo "OK"
+        if: job.steps.bad.status == failure()

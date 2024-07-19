@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  plan-production:
+  prod-liquibase-plan:
     name: Prod Plan - Liquibase plan and Update
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
@@ -16,7 +16,7 @@ jobs:
       environment: 'prod-plan'
       runner: 'ubuntu-latest'
 
-  deploy-production:
+  prod-liquibase-deploy:
     name: Prod Deploy - Liquibase plan and Update on production
     uses: ./.github/workflows/liquibase-release.yml
     secrets:
@@ -26,3 +26,42 @@ jobs:
     with:
       environment: 'prod'
       runner: 'ubuntu-latest'
+
+  prod-docker:
+    name: PROD docker deploy
+    needs: prod-liquibase-deploy
+    uses: ./.github/workflows/_deployment.yaml
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+      security-events: write
+    with:
+      environment: 'prod'
+    secrets: inherit
+
+    prod-liquibase-rollback:
+      name: PROD liquibase rollback
+      uses: ./.github/workflows/liquibase-rollback.yml
+      if: failure() || cancelled()
+      needs: [ prod-liquibase-deploy, prod-docker ]
+      secrets:
+        SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+        WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+        USERNAME: ${{ secrets.USERNAME }}
+      with:
+        environment: 'prod'
+        runner: 'ubuntu-latest'
+    prod-liquibase-update-tag:
+      name: PROD Liquibase Update tag and repository variable
+      needs: [ prod-liquibase-deploy, prod-docker ]
+      uses: ./.github/workflows/liquibase-tag.yml
+      secrets:
+        SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+        WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+        USERNAME: ${{ secrets.USERNAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      with:
+        environment: 'prod'
+        runner: 'ubuntu-latest'
+        liquibase-tag: '${{ github.sha }}'
