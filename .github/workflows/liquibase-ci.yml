@@ -1,4 +1,4 @@
-name: Reusable Continuous Integration (CI) Build Workflow
+name: Reusable Continuous Integration (CI) Build Workflow for Dev, QA and prod-plan
 
 on:
   workflow_call:
@@ -31,6 +31,9 @@ jobs:
       pull-requests: write
       actions: read
       security-events: write
+    defaults:
+      run:
+        working-directory: db/
 
     steps:
     - id: 'auth'
@@ -70,15 +73,15 @@ jobs:
 
     - name: Liquibase Status
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} status --verbose
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} status --verbose
 
     - name: Liquibase Validate
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} validate   
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} validate   
 
     - name: Liquibase Print SQL
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
 
     - name: Set Timestamp
       run: echo "TIMESTAMP=$(date +"%Y%m%d%H%M%S")" >> $GITHUB_ENV
@@ -92,4 +95,4 @@ jobs:
     - name: Liquibase Update
       if: github.event_name == 'push'
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} update
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} update
