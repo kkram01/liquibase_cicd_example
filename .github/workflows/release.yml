@@ -1,4 +1,5 @@
-name: Release
+
+name: Release Workflow for PROD Environments
 on:
   release:
     types: [published]

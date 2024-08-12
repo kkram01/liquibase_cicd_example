@@ -9,8 +9,12 @@ There are two Github workflows under the .github/workflows/ folder used to facil
     * Establish cloudSQL proxy connection to the SQL database
     * Setup liquibase and run liquibase status. Print SQL to be executed as an artifact to the workflow
     * Additionally, if triggered due to a push request, the liquibase update is run to execute the changes on the respective environment based on which the push is triggered (dev for develop branch and QA for main branch)
+    * Build the docker application and deploy it to cloud run
+    * If the Docker deployment is successful, liquibase changelog is tagged with the commit ID and the Repository environment Variable for the latest stable commit will be updated to this commit ID.
+    * If the Docker deployment fails, liquibase rollback will be triggered to revert the database to the last stable version tag based on the repository environment variable `LAST_STABLE_VERSION_TAG`
 - release.yaml
     * Executes database changes in the production environment on creation of a release from the main branch.
+    * Similar to the `ci.yaml` workflow, app is deployed to cloud run. Based on the success or failure of app deployment, the liquibase changelog will be tagged or the changes will be reverted to the last stable commit.
 
 ## Deployment into dev, QA, and prod
 ### Dev environment
@@ -27,8 +31,8 @@ There are two Github workflows under the .github/workflows/ folder used to facil
 ### Prod environment
 - When QA is completed successfully, you can now promote to `prod`.
 - To do this, you will have to create release from the `main` branch with the appropriate tag and release notes.
-- Once this is done, a plan will be run on the github workflow and an artifact of the SQL script to be run will be attached to the workflow.
-- If approved and published, this will execute the same database changes on `prod`.
+- Once this is done, a plan will be run on the github workflow using an idential `prod-plan` github environment and an artifact of the SQL script to be run will be attached to the workflow.
+- Once the artifact is reviewed and the `prod` job workflow is approved, this will execute the same database changes and app deployment on `prod`.
 
 
 ## References
