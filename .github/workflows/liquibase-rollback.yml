@@ -1,4 +1,4 @@
-name: Liquibase Rollback Reusable Workflow
+name: Reusable Liquibase Rollback Reusable Workflow
 
 on:
   workflow_call:
@@ -31,6 +31,9 @@ jobs:
       pull-requests: write
       actions: read
       security-events: write
+    defaults:
+      run:
+        working-directory: ./db/
 
     steps:
     - id: 'auth'
@@ -70,7 +73,7 @@ jobs:
 
     - name: Liquibase Print Rollback SQL
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/rollback-sql.sql rollback-sql ${{ vars.LAST_STABLE_VERSION_TAG }}
+        ./liquibase/liquibase --defaultsFile=./db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/rollback-sql.sql rollback-sql ${{ vars.LAST_STABLE_VERSION_TAG }}
 
     - name: Set Timestamp
       run: echo "TIMESTAMP=$(date +"%Y%m%d%H%M%S")" >> $GITHUB_ENV
@@ -83,4 +86,4 @@ jobs:
 
     - name: Liquibase Rollback
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} rollback ${{ vars.LAST_STABLE_VERSION_TAG }}
+        ./liquibase/liquibase --defaultsFile=./db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} rollback ${{ vars.LAST_STABLE_VERSION_TAG }}

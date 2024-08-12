@@ -1,4 +1,4 @@
-name: Continuous Integration (CI) Build
+name: Continuous Integration (CI) Build for QA and Dev Environments
 
 on:
   pull_request:

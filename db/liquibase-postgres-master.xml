@@ -7,7 +7,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 	<!-- Include postgresql files -->
 <!--	<include file="changesets/postgresql/initial-schema-postgresql.sql"/>-->
-	    <includeAll path="changesets/postgresql/"/>
+	    <includeAll path="/changesets/postgresql/" relativeToChangelogFile="true" />
 
 
 </databaseChangeLog>
