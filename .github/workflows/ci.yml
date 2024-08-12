@@ -1,4 +1,4 @@
-name: Continuous Integration (CI) Build
+name: Continuous Integration (CI) Build for QA and Dev Environments
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ on:
 jobs:
   qa-liquibase-update:
     name: QA Liquibase plan and Update
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' || github.base_ref == 'main'
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
       SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
@@ -77,7 +77,7 @@ jobs:
   dev-docker:
     name: DEV docker deploy
     needs: dev-liquibase-update
-    if: github.ref_name == 'develop'
+    if: github.ref_name == 'develop' || github.base_ref == 'develop'
     uses: ./.github/workflows/_deployment.yaml
     permissions:
       id-token: write
