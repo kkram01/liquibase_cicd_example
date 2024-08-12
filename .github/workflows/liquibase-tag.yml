@@ -1,4 +1,4 @@
-name: Reusable Continuous Integration (CI) Build Workflow
+name: Reusable Workflow for Liquibase Tagging
 
 on:
   workflow_call:
@@ -56,6 +56,11 @@ jobs:
       with:
         version: '>= 363.0.0'
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Enable cloud SQL proxy to temp instance
       run: |
         curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.0/cloud-sql-proxy.linux.amd64
@@ -64,11 +69,6 @@ jobs:
         echo $!
         echo CLOUD_SQL_PROXY_PID=$(echo $!) >> $GITHUB_ENV
 
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Download and Install liquibase
       run: |
         curl -L https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip --output liquibase-4.28.0.zip
@@ -76,7 +76,7 @@ jobs:
 
     - name: Liquibase Tag
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} tag --tag=${{ inputs.liquibase-tag }}
+        ./liquibase/liquibase --defaultsFile=./db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} tag --tag=${{ inputs.liquibase-tag }}
 
     - name: Update Repository Env Variable
       run: |
