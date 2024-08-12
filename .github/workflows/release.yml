@@ -1,4 +1,5 @@
-name: Release
+
+name: Release Workflow for PROD Environments
 on:
   release:
     types: [published]
@@ -40,7 +41,7 @@ jobs:
       environment: 'prod'
     secrets: inherit
 
-    prod-liquibase-rollback:
+  prod-liquibase-rollback:
       name: PROD liquibase rollback
       uses: ./.github/workflows/liquibase-rollback.yml
       if: failure() || cancelled()
@@ -52,7 +53,7 @@ jobs:
       with:
         environment: 'prod'
         runner: 'ubuntu-latest'
-    prod-liquibase-update-tag:
+  prod-liquibase-update-tag:
       name: PROD Liquibase Update tag and repository variable
       needs: [ prod-liquibase-deploy, prod-docker ]
       uses: ./.github/workflows/liquibase-tag.yml
