@@ -1,4 +1,4 @@
-name: Reusable Continuous Integration (CI) Build Workflow
+name: Reusable Continuous Integration (CI) Build Workflow for Dev, QA and prod-plan
 
 on:
   workflow_call:
@@ -31,6 +31,9 @@ jobs:
       pull-requests: write
       actions: read
       security-events: write
+    defaults:
+      run:
+        working-directory: db/
 
     steps:
     - id: 'auth'
@@ -50,6 +53,11 @@ jobs:
       with:
         version: '>= 363.0.0'
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Enable cloud SQL proxy to temp instance
       run: |
         curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.0/cloud-sql-proxy.linux.amd64
@@ -58,11 +66,6 @@ jobs:
         echo $!
         echo CLOUD_SQL_PROXY_PID=$(echo $!) >> $GITHUB_ENV
 
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Download and Install liquibase
       run: |
         curl -L https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip --output liquibase-4.28.0.zip
@@ -70,15 +73,15 @@ jobs:
 
     - name: Liquibase Status
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} status --verbose
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} status --verbose
 
     - name: Liquibase Validate
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} validate   
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} validate   
 
     - name: Liquibase Print SQL
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{ vars.LOG_LEVEL }} --sql-log-level ${{ vars.SQL_LOG_LEVEL }} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} --output-file=./artifacts/update-sql.sql update-sql
 
     - name: Set Timestamp
       run: echo "TIMESTAMP=$(date +"%Y%m%d%H%M%S")" >> $GITHUB_ENV
@@ -92,4 +95,4 @@ jobs:
     - name: Liquibase Update
       if: github.event_name == 'push'
       run: |
-        ./liquibase/liquibase --defaultsFile=./liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} update
+        ./liquibase/liquibase --defaultsFile=db/liquibase/liquibase.properties --log-level ${{vars.LOG_LEVEL}} --sql-log-level ${{vars.SQL_LOG_LEVEL}} --url ${{ vars.URL }} --username ${{ secrets.USERNAME }} update
