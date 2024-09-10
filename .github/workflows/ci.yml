@@ -11,7 +11,7 @@ on:
 jobs:
   qa-liquibase-update:
     name: QA Liquibase plan and Update
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' || github.base_ref == 'main'
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
       SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
@@ -65,7 +65,7 @@ jobs:
 
   dev-liquibase-update:
     name: DEV Liquibase plan and Update
-    if: github.ref_name  == 'develop'
+    if: github.ref_name  == 'develop' || github.base_ref == 'develop'
     uses: ./.github/workflows/liquibase-ci.yml
     secrets:
       SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
